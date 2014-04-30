@@ -9,10 +9,15 @@ Sass 3.3 & compass で動作する、sass mixin Library
 ------
 0.1.0
 
+
 開発環境
 ------
 Sass 3.3.6
 Compass 1.0.0.alpha.19
+
+必要ライブラリ
+------
+hisho-query
 
 
 利用方法
