@@ -1,0 +1,777 @@
+@charset "utf-8";
+/*! hisho-mixin v0.1.0 */
+// Sass3 and compass1 mixin
+// http://query.hisho.com
+// 
+// Copyright 2014 shoyo kyo
+// Released under the MIT license
+// https://github.com/syouyou/hisho-query/blob/master/LICENSE
+// 
+// Date: 2014-04-30
+
+
+// ------------------------------
+// [name] hm-font-cloud v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_font-cloud.scss
+// [desc] 各種fontsize用class s,l,xl,xxl等を生成。map指定する事で任意の値を設定可能
+// [exsample]
+//
+//   @include hm("font.cloud", 12px);
+//
+//   @include hm("font.cloud", (
+//      xxs : 12px,
+//      xs  : 13px,
+//      s   : 14px,
+//      m   : 16px,
+//      l   : 18px,
+//      xl  : 20px,
+//      xxl : 32px,
+//   ));
+// ------------------------------
+
+@mixin hm-font-cloud($size){
+	$_baseSize: if(hq("is.map",$size) , hq("map.get", $size, "m") , $size);
+
+	$_sizeMap : (
+		xxs : hq("num.round", $_baseSize / 2),
+		xs  : hq("num.round", 2 * $_baseSize / 3),
+		s   : hq("num.round", 3 * $_baseSize / 4),
+		m   : $_baseSize,
+		l   : hq("num.round", 4 * $_baseSize / 3),
+		xl  : hq("num.round", 3 * $_baseSize / 2),
+		xxl : hq("num.round", 2 * $_baseSize)
+	);
+
+	//mapの場合extend
+	@if hq("is.map",$size){
+		$_sizeMap: hq("map.extend", $_sizeMap, $size);
+	}
+
+	@each $_k, $_v in $_sizeMap {
+		&.#{$_k} {
+			font-size : $_v;
+		}
+	}
+}
+
+
+
+// ------------------------------
+// [name] hm-link-styles v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_link-styles.scss
+// [desc] linkのcolorとunderlineを指定
+// [exsample]
+//
+//   @include hm("link.styles",(
+//   	color: (
+//   		default : #000,
+//   		link    : blue,
+//   		hover   : red,
+//   	),
+//   	underline: (
+//   		default : true,
+//   		hover   : false,
+//   	)
+//   ));
+// ------------------------------
+
+//publick mixin
+@mixin hm-link-styles($options){
+
+	//-----------------
+	// options
+	//-----------------
+	$options: hq("map.mergeDeep", (
+		color: (
+			default : false,
+			link    : false,
+			visited : false,
+			hover   : false,
+			active  : false,
+			focus   : false
+		),
+		underline: (
+			default : null,
+			link    : null,
+			visited : null,
+			hover   : null,
+			active  : null,
+			focus   : null
+		)
+	), $options);
+
+
+	//-----------------
+	// view
+	//-----------------
+	@each $_k, $_v in hq("map.get", $options, "color") {
+		$_color: hq("map.get", $options, "color." + $_k);
+		$_underline: hq("map.get", $options, "underline." + $_k);
+
+		//default
+		@if $_k == "default"{
+			@if $_color{
+				color: $_v;
+			}
+			@if $_underline != null{
+				text-decoration: if($_underline, underline, none);
+			}
+
+		//other
+		}@else{
+			&:#{$_k} {
+				@if $_color{
+					color: $_v;
+				}
+				@if $_underline != null{
+					text-decoration: if($_underline, underline, none);
+				}
+			}
+		}
+
+	}
+
+}
+
+
+
+// ------------------------------
+// [name] hm-link-styles v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_link-colors.scss
+// [desc] linkのcolorを指定
+// [exsample]
+//
+//   @include hm("link.colors", black, blue, red, red, red);
+//
+//   @include hm("link.colors", (
+//      default : #000,
+//      link    : blue,
+//      hover   : red,
+//   ));
+// ------------------------------
+
+//publick mixin
+@mixin hm-link-colors($default: true, $hover: false, $active: false, $visited: false, $focus: false){
+	
+	$_isMap: hq("is.map", $default);
+	$_colorMap: ();
+	
+	@if $_isMap{
+		$_colorMap: $default;
+	}@else{
+		$_colorMap : (
+			default : if( $default, $default, null),
+			link    : if( $default, $default, null),
+			visited : if( $visited, $visited, null),
+			hover   : if( $hover, $hover, null),
+			active  : if( $active, $active, null),
+			focus   : if( $focus, $focus, null),
+		);
+	}
+
+	//-----------------
+	// view
+	//-----------------
+
+	@each $_k, $_v in $_colorMap {
+		@if $_v {
+			//default
+			@if $_k == "default"{
+				color: $_v;
+			//other
+			}@else{
+				&:#{$_k} {
+					color : $_v;
+				}
+			}
+		}
+	}
+
+}
+
+
+
+// ------------------------------
+// [name] hm-module v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_module.scss
+// [desc] mapの指定を基にCSS生成
+// [exsample]
+//
+//   @include hm("module", $map);
+// ------------------------------
+
+//publick mixin
+@mixin hm-module($options){
+
+	//-----------------
+	// options
+	//-----------------
+	$options: hq("map.mergeDeep", (
+		name    : null,  //[str]moduleのClass名指定
+		extend  : null,  //[str]extend専用のplaceholderを作る場合
+		display : null,  //[int]moduleのdisplayを指定
+		width   : auto,  //[int]moduleのwidth指定
+		align   : null,  //[str]moduleのセンタリング位置を指定
+		margin  : null,  //[int]moduleのmargin指定
+		//style
+		core: ()
+	), $options);
+
+	$_nameUp: "." + hq("map.get -> str.flUpcase", $options,"name" );
+	$_nameDw: "." + hq("map.get -> str.flDowncase", $options,"name" );
+	$_nameExtend: hq("map.get", $options, "extend");
+
+	@if $_nameExtend {
+		$_nameUp: $_nameExtend;
+	}
+
+	//-----------------
+	// view
+	//-----------------
+	#{$_nameUp}{
+		@include hm-module-core($options);
+		@include hm-write(hq("map.get", $options, "core"));
+
+		@each $k,$v in $options{
+			@if hq("is.map",$v) and $k != "core" {
+				$key: hq("str.flUpcase", $k);
+				#{$_nameDw}#{$key}{
+					@include hm-write($v);
+				}
+			}
+		}
+	}
+
+}
+
+
+
+// ------------------------------
+// [name] hm-module-core v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_module-core.scss
+// [desc] hishoModuleの基本styleを指定
+// [exsample]
+//
+//   @include hm("module.core");
+//
+//   @include hm("module.core",
+//     width : 500px,
+//     align : center
+//   );
+// ------------------------------
+
+//publick mixin
+@mixin hm-module-core($options:()){
+
+	//-----------------
+	// options
+	//-----------------
+	$options: hq("map.extend", (
+		display : null,
+		width   : auto,
+		align   : left,
+		margin  : 0
+	), $options);
+	
+	$_display : hq("map.get", $options, "display");
+	$_width   : if(hq("map.get", $options, "width") == auto, null, hq("map.get", $options, "width"));
+	$_align   : hq("map.get", $options, "align");
+	$_margin  : hq("map.get -> css.toMap", $options, "margin", "margin" );
+	
+	//inlineBlockの場合
+	@if $_width and $_display == "inline-block"{
+		@include hm-write-propaty("text-align", $_align);
+
+	}@else{
+		//align center
+		@if $_width and $_align == "center"{
+			$_margin: hq("map.extend", $_margin, (
+				right:  auto,
+				left:   auto
+			));
+		
+		//align right
+		}@else if $_width and $_align == "right"{
+			$_margin: hq("map.extend", $_margin, (
+				right:  0,
+				left:   auto
+			));
+		}
+	}
+
+	//-----------------
+	// view
+	//-----------------
+	@include hm-write-propaty("display", $_display);
+	@include hm-write-propaty("width", $_width);
+	@include hm-write-propaty("margin", $_margin);
+
+}
+
+
+
+// ------------------------------
+// [name] hm-sprite v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_sprite.scss
+// [desc]
+//   sprite生成
+// [options]
+//     spriteMap    : sprite-map指定
+//     name         : 表示する画像のfile名指定。:区切りで複数指定する事でhover時のsprite指定可能
+//     positionOnly : "all" or "position"
+//     btn          : ボタン or リンクとして使用する場合true
+//     hover        : hover時のstyle指定
+// [exsample]
+//   @include hm("sprite", (spriteMap:$spriteMap, name:"list01:list01_hover"));
+// ------------------------------
+@mixin hm-sprite($options:()){
+
+	$options: hq("map.mergeDeep",(
+		spriteMap: null,
+		name: null,
+		positionOnly: false,
+		btn: false,
+		hover: null
+	) ,$options);
+
+	$_name: hq("map.get",$options,"name");
+
+	//複数指定の場合,options変更
+	@if hq("str.match", $_name, ":"){
+		$_nameList: hq("str.split", $_name, ":");
+		$_hoverPos: sprite-position(hq("map.get",$options,"spriteMap"), hq("list.get",$_nameList,2));
+		$_newData: (
+			name : hq("list.get", $_nameList, 1),
+			hover: (
+				background-position: $_hoverPos
+			)
+		);
+		$options: hq("map.mergeDeep", $options, $_newData);
+	}
+
+	//実行
+	@include hm-sprite-core($options);
+	@include hm-sprite-image($options);
+}
+
+
+
+// ------------------------------
+// [name] hm-sprite-core v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_sprite-core.scss
+// [desc]
+//   spriteを指定する要素に指定。
+//     btn    : ボタンorリンクとして使用する場合true
+//     hover  : hover時のstyle指定
+// [exsample]
+//   @include hm-sprite-core((cursor:true));
+// ------------------------------
+@mixin hm-sprite-core($options:()){
+
+	$options: hq("map.mergeDeep",(
+		btn: false,
+		hover: null
+	) ,$options);
+	
+	//view
+	@include inline-block();
+	overflow:hidden;
+	border:none;
+	vertical-align:top;
+	white-space: nowrap;
+	text-indent: 100%;
+	
+	//curor
+	@if hq("map.get", $options, "btn"){
+		cursor: pointer;
+	}
+
+	//hover style
+	@if hq("map.get", $options, "hover") != null{
+		&:hover{
+			@include hm-write(hq("map.get", $options, "hover"));
+		}
+	}
+	
+}
+
+
+
+// ------------------------------
+// [name] hm-sprite-image v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_sprite-image.scss
+// [desc]
+//   spriteの画像表示用style生成
+//     spriteMap    : sprite-map指定
+//     name         : 表示する画像のfile名指定
+//     positionOnly : "all" or "position"
+// [exsample]
+//   @include hm-sprite-image((spriteMap:$spriteMap, name:"list01"));
+// ------------------------------
+@mixin hm-sprite-image($options:()){
+	
+	$options: hq("map.mergeDeep",(
+		spriteMap: null,
+		name: null,
+		positionOnly: false
+	) ,$options);
+
+	$_spriteMap: hq("map.get",$options, "spriteMap");
+	$_name: hq("map.get",$options, "name");
+
+	//view
+	@if hq("map.get",$options, "positionOnly") == false {
+		background-image: sprite-url($_spriteMap);
+		background-repeat: no-repeat;
+		height: image-height(sprite-file($_spriteMap, $_name));
+		width: image-width(sprite-file($_spriteMap, $_name));
+	}
+	background-position: sprite-position($_spriteMap, $_name);
+}
+
+
+
+// ------------------------------
+// [name] hm-write v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_write.scss
+// [desc] mapに指定されたプロパティデータを全て反映
+// [exsample]
+//
+//   @include hm-write(map);
+// ------------------------------
+@mixin hm-write($map){
+	@if $map and hq("is.map",$map) and length($map) != 0{
+		@each $key, $value in $map {
+			@include hm-write-propaty($key, $value);
+		}
+	}
+}
+
+
+
+// ------------------------------
+// [name] hm-write-propaty v1.0.0 alpha1
+// [path] /hisho-mixin/hm/_write-propaty.scss
+// [desc] 指定内容を基にプロパティと値を生成
+//        通常指定の場合はショートハンド、map指定の場合は複数プロパティで返す
+// [exsample]
+//   @include hm-write-propaty("border",solid 1px #ccc);
+//
+//   @include hm-write-propaty("border",(
+//     style : solid,
+//     width : 1px
+//   ));
+// ------------------------------
+
+//
+// publick mixin
+// @ hm-write-propaty
+//
+@mixin hm-write-propaty($propaty, $value){
+	//map指定
+	@if hq("is.map",$value) {
+
+		//margin padding
+		@if $propaty == "margin" or $propaty == "padding" {
+			@include hm-write-propaty-map-margin($propaty, $value);
+		
+		//border
+		}@else if $propaty == "border" {
+			@include hm-write-propaty-map-border($propaty, $value);
+
+		//background
+		}@else if $propaty == "background" {
+			@include hm-write-propaty-map-background($propaty, $value);
+
+		//font
+		}@else if $propaty == "font" {
+			@include hm-write-propaty-map-font($propaty, $value);
+		
+		//box
+		}@else if $propaty == "box" {
+			@include hm-write-propaty-map-box($propaty, $value);
+
+		//linkStyles mixin
+		}@else if $propaty == "link-styles" {
+			@if $value{
+				@include hqm("link.styles", $value);
+			}
+
+		//fontCloud mixin
+		}@else if $propaty == "font-cloud" {
+			@if $value{
+				@include hqm("font.cloud", $value);
+			}
+		
+		//default
+		}@else{
+			@include hm-write-propaty-map($propaty, $value);
+		}
+
+	//map以外の通常指定
+	} @else {
+		@include hm-write-propaty-value($propaty, $value);
+	}
+}
+
+
+//
+// private mixin
+// @ hm-write-propaty-value
+// - valueがmapでは無いときの処理
+//
+@mixin hm-write-propaty-value($propaty, $value){
+	//valueがcompass対応mixinの場合
+	//display:inline-block
+	@if $propaty == "display" and $value == "inline-block"{
+		@include inline-block;
+	//display:box
+	}@else if $propaty == "display" and $value == "box"{
+		@include display-box;
+	//display:box
+	}@else if $propaty == "opacity"{
+		@include opacity($value);
+	//compass非対応
+	}@else{
+		#{$propaty} : $value;
+	}
+}
+
+
+//
+// private mixin
+// @ hm-write-propaty-map
+// - valueがmapの時のデフォルト処理
+//
+@mixin hm-write-propaty-map($propaty, $value){
+	@each $key, $value in $value {
+		#{$propaty}-#{$key}: $value;
+	}
+}
+
+
+//
+// private mixin
+// @ hm-write-propaty-map-margin
+// - margin,padding時、map指定で値が全て指定されている場合、ショートハンドに変換し生成。
+//
+@mixin hm-write-propaty-map-margin($propaty, $map){
+	$_isNull: false;
+	$map: hq("map.extend",(
+		top: null,
+		right: null,
+		bottom: null,
+		left: null
+	) ,$map);
+
+	//shorthandチェック
+	$_short: hq("css.toShort",$map, $propaty);
+	
+	//shortHand
+	@if $_short {
+		#{$propaty} : $_short;
+	//map
+	}@else{
+		@include hm-write-propaty-map($propaty, $map);
+	}
+}
+
+//
+// private mixin
+// @ hm-write-propaty-map-border
+// - border時mapが複数構造ある場合対応
+//
+@mixin hm-write-propaty-map-border($propaty, $map){
+	//shorthandチェック
+	$_short: hq("css.toShort",$map, $propaty);
+	
+	//shortHand
+	@if $_short {
+		#{$propaty} : $_short;
+	//map
+	}@else{
+		@each $key, $value in $map {
+			//border-radius
+			@if $key == "radius"{
+				@include border-radius($value);
+			//border-image
+			}@else if $key == "image"{
+				@include border-image($value);
+			//map内にshortHand
+			}@else if $key == "all"{
+				#{$propaty}: $value;
+			//left->styleの様なdeep指定
+			}@else if type-of($value) == map{
+				@each $_k2, $_v2 in $value {
+					#{$propaty}-#{$key}-#{$_k2}: $_v2;
+				}
+			//通常map
+			}@else{
+				#{$propaty}-#{$key}: $value;
+			}
+		}
+	}
+}
+
+//
+// private mixin
+// @ hm-write-propaty-map-background
+// - background時mapが複数構造ある場合対応
+//
+@mixin hm-write-propaty-map-background($propaty, $map){
+	//shorthandチェック
+	$_short: hq("css.toShort",$map, $propaty);
+	
+	//shortHand
+	@if $_short {
+		#{$propaty} : $_short;
+	//map
+	}@else{
+		@each $key, $value in $map {
+			//background-clip
+			@if $key == "clip"{
+				@include background-clip($value);
+			//background-origin
+			}@else if $key == "origin"{
+				@include background-origin($value);
+			//background-size
+			}@else if $key == "size"{
+				@include background-size($value);
+			//map内にshortHand
+			}@else if $key == "all"{
+				#{$propaty}: $value;
+			//通常map
+			}@else{
+				#{$propaty}-#{$key}: $value;
+			}
+		}
+	}
+}
+
+//
+// private mixin
+// @ hm-write-propaty-map-font
+// - font時mapが複数構造ある場合対応
+//
+@mixin hm-write-propaty-map-font($propaty, $map){
+	//shorthandチェック
+	$_short: hq("css.toShort",$map, $propaty);
+	
+	//shortHand
+	@if $_short {
+		#{$propaty} : $_short;
+	//map
+	}@else{
+		@each $key, $value in $map {
+			//line-height
+			@if $key == "line-height"{
+				line-height: $value;
+			//map内にshortHand
+			}@else if $key == "all"{
+				#{$propaty}: $value;
+			//通常map
+			}@else{
+				#{$propaty}-#{$key}: $value;
+			}
+		}
+	}
+}
+
+//
+// private mixin
+// @ hm-write-propaty-map-box
+// - box時mapが複数構造ある場合対応
+//
+@mixin hm-write-propaty-map-box($propaty, $map){
+	@each $key, $value in $map {
+		//box-shadow
+		@if $key == "shadow"{
+			@include box-shadow($value);
+		//box-sizing
+		}@else if $key == "sizing"{
+			@include box-sizing($value);
+		//box-flex
+		}@else if $key == "flex"{
+			@include box-flex($value);
+		//box-flex-group
+		}@else if $key == "flex-group"{
+			@include box-flex-group($value);
+		//box-orient
+		}@else if $key == "orient"{
+			@include box-orient($value);
+		//box-orient-group
+		}@else if $key == "orient-group"{
+			@include box-orient-group($value);
+		//box-align
+		}@else if $key == "align"{
+			@include box-align($value);
+		//box-direction
+		}@else if $key == "direction"{
+			@include box-direction($value);
+		//box-lines
+		}@else if $key == "lines"{
+			@include box-lines($value);
+		//box-pack
+		}@else if $key == "pack"{
+			@include box-pack($value);
+		//通常map
+		}@else{
+			#{$propaty}-#{$key}: $value;
+		}
+	}
+}
+
+
+
+
+// ==============================
+// [name] hm-core v0.1.1 alpha1
+// [path] /hisho-mixin/_hm-core.scss
+// [desc] hisho mixin Interface
+// ==============================
+@mixin hm($argument...){
+	//compass あり
+	@if hq("is.mixin", sprite-background) {
+		$_name: nth($argument,1);
+		$_arg: if( length($argument) < 2, null, hq-list-slice($argument,2) );
+		
+		@if $_name == "write"{
+			@include hm-write($_arg...);
+
+		}@else if $_name == "write.propaty"{
+			@include hm-write-propaty($_arg...);
+
+		}@else if $_name == "sprite"{
+			@include hm-sprite($_arg...);
+
+		}@else if $_name == "sprite.core"{
+			@include hm-sprite-core($_arg...);
+
+		}@else if $_name == "sprite.image"{
+			@include hm-sprite-image($_arg...);
+
+		}@else if $_name == "module"{
+			@include hm-module($_arg...);
+
+		}@else if $_name == "module.core"{
+			@include hm-module-core($_arg...);
+
+		}@else if $_name == "font.cloud"{
+			@include hm-font-cloud($_arg...);
+
+		}@else if $_name == "link.styles"{
+			@include hm-link-styles($_arg...);
+	
+		}@else if $_name == "link.colors"{
+			@include hm-link-colors($_arg...);
+
+		}@else if $_name == "help"{
+			@include hm-help($_arg...);
+			$test: hq-puts($mixinHelp);
+		}
+	//compass なし
+	}@else{
+		$error: hq-puts("  error undefind compass in hmixin")
+	}
+
+}
