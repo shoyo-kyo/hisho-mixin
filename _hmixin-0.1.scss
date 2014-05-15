@@ -1,5 +1,5 @@
 @charset "utf-8";
-/*! hisho-mixin v0.1.0 */
+/*! hisho-mixin v0.1.1 */
 // Sass3 and compass1 mixin
 // http://query.hisho.com
 // 
@@ -7,7 +7,7 @@
 // Released under the MIT license
 // https://github.com/syouyou/hisho-query/blob/master/LICENSE
 // 
-// Date: 2014-04-30
+// Date: 2014-05-15
 
 
 // ------------------------------
@@ -327,7 +327,10 @@
 @mixin hm-sprite($options:()){
 
 	$options: hq("map.mergeDeep",(
-		spriteMap: null,
+		sprite: (
+			map: null,
+			url: null,
+		),
 		name: null,
 		positionOnly: false,
 		btn: false,
@@ -339,7 +342,7 @@
 	//複数指定の場合,options変更
 	@if hq("str.match", $_name, ":"){
 		$_nameList: hq("str.split", $_name, ":");
-		$_hoverPos: sprite-position(hq("map.get",$options,"spriteMap"), hq("list.get",$_nameList,2));
+		$_hoverPos: sprite-position(hq("map.get",$options,"sprite.map"), hq("list.get",$_nameList,2));
 		$_newData: (
 			name : hq("list.get", $_nameList, 1),
 			hover: (
@@ -398,35 +401,39 @@
 
 
 // ------------------------------
-// [name] hm-sprite-image v1.0.0 alpha1
+// [name] hm-sprite-image v1.0.1 alpha1
 // [path] /hisho-mixin/hm/_sprite-image.scss
 // [desc]
 //   spriteの画像表示用style生成
-//     spriteMap    : sprite-map指定
+//     sprite       : sprite指定
 //     name         : 表示する画像のfile名指定
 //     positionOnly : "all" or "position"
 // [exsample]
-//   @include hm-sprite-image((spriteMap:$spriteMap, name:"list01"));
+//   @include hm-sprite-image((sprite:(), name:"list01"));
 // ------------------------------
 @mixin hm-sprite-image($options:()){
 	
 	$options: hq("map.mergeDeep",(
-		spriteMap: null,
+		sprite: (
+			map: null,
+			url: null,
+		),
 		name: null,
 		positionOnly: false
 	) ,$options);
 
-	$_spriteMap: hq("map.get",$options, "spriteMap");
+	$_map: hq("map.get",$options, "sprite.map");
+	$_url: hq("map.get",$options, "sprite.url");
 	$_name: hq("map.get",$options, "name");
 
 	//view
 	@if hq("map.get",$options, "positionOnly") == false {
-		background-image: sprite-url($_spriteMap);
+		background-image: $_url;
 		background-repeat: no-repeat;
-		height: image-height(sprite-file($_spriteMap, $_name));
-		width: image-width(sprite-file($_spriteMap, $_name));
+		height: image-height(sprite-file($_map, $_name));
+		width: image-width(sprite-file($_map, $_name));
 	}
-	background-position: sprite-position($_spriteMap, $_name);
+	background-position: sprite-position($_map, $_name);
 }
 
 
